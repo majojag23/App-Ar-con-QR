@@ -8,7 +8,7 @@ export const CONFIG = {
 
   // Botón final flotante (CTA)
   cta: {
-    text: 'Solicitar demo',
+    text: 'Conóceme',
     url: 'https://mariana.virtualelearning.co',   // portafolio (puede ser también un enlace de WhatsApp: https://wa.me/57XXXXXXXXXX)
   },
 
