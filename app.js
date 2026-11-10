@@ -5,8 +5,8 @@
 // ============================================================
 import * as THREE from 'three';
 import { MindARThree } from './lib/mindar/mindar-image-three.prod.js';
-import { CONFIG } from './config.js';
-import * as D from './draw.js';
+import { CONFIG } from './config.js?v=2';
+import * as D from './draw.js?v=2';
 
 const $ = id => document.getElementById(id);
 const qs = new URLSearchParams(location.search);
@@ -379,7 +379,8 @@ function toast(msg) { const t = $('toast'); t.textContent = msg; t.classList.add
 function fail(e) {
   console.error(e);
   let msg = 'Revisa que hayas permitido el acceso a la cámara y vuelve a intentarlo.';
-  const n = e && (e.name || e.message || '');
+  const n = e ? (e.name || e.message || String(e)) : '';
+  $('err-tech').textContent = e ? [e.name, e.message || (typeof e === 'string' ? e : '')].filter(Boolean).join(': ') : '';
   if (/nomedia/.test(n) || !navigator.mediaDevices) msg = 'Este navegador no permite abrir la cámara aquí. Abre el enlace directamente en Safari (iPhone) o Chrome (Android), no desde dentro de otra app, y verifica que la dirección empiece por https://';
   else if (/NotAllowed|Permission/i.test(n)) msg = 'La cámara está bloqueada. En iPhone: Ajustes › Safari › Cámara › Preguntar/Permitir. En Android: toca el candado de la barra de direcciones › Permisos › Cámara.';
   else if (/NotFound|Overconstrained/i.test(n)) msg = 'No encontramos una cámara en este dispositivo.';
@@ -389,8 +390,17 @@ function fail(e) {
 
 async function begin() {
   audio(); show('s-load');
+  const stepEl = $('load-step'), retry2 = $('b-retry2');
+  retry2.style.display = 'none'; stepEl.textContent = 'Pidiendo permiso de cámara…';
+  const slow = setTimeout(() => { stepEl.textContent = 'Está tardando más de lo normal. Revisa tu conexión y que el navegador no esté bloqueando la cámara.'; retry2.style.display = ''; }, 25000);
   try {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) throw new Error('nomedia');
+    // Paso 1: pedir la cámara por separado para que cualquier error de permiso sea claro
+    try {
+      const probe = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } }, audio: false });
+      probe.getTracks().forEach(t => t.stop());
+    } catch (pe) { throw pe; }
+    stepEl.textContent = 'Cargando el reconocimiento de imagen…';
     if (mind) { try { mind.stop(); } catch (e) { /* */ } }
     container = $('ar'); container.innerHTML = '';
     mind = new MindARThree({
@@ -410,12 +420,14 @@ async function begin() {
     };
     anchor.onTargetLost = () => { targetVisible = false; if (!floating) { $('scan').classList.add('on'); $('scan').querySelector('.tx').textContent = 'Apunta de nuevo a la tarjeta Virtual eLearning'; } };
     await mind.start();
+    clearTimeout(slow);
     running = true; clock.start(); renderer.setAnimationLoop(loop);
     show(null); $('scan').classList.add('on');
     if (qs.has('float')) enterFloating();
-  } catch (e) { running = false; fail(e); }
+  } catch (e) { clearTimeout(slow); running = false; fail(e); }
 }
 
+$('b-retry2').addEventListener('click', begin);
 $('b-start').addEventListener('click', begin);
 $('b-retry').addEventListener('click', begin);
 $('b-float').addEventListener('click', () => { audio(); enterFloating(); });

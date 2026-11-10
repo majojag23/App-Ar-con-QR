@@ -74,13 +74,15 @@
 <section id="s-load" class="screen">
   <div class="spin"></div>
   <h1 style="font-size:22px">Preparando la cámara…</h1>
-  <p>La primera vez puede tardar unos segundos.</p>
+  <p id="load-step">La primera vez puede tardar unos segundos.</p>
+  <button id="b-retry2" class="btn ghost" style="display:none">Reintentar</button>
 </section>
 
 <!-- Error -->
 <section id="s-err" class="screen">
   <h1 style="font-size:24px">No pudimos abrir la cámara</h1>
   <p id="err-msg"></p>
+  <p id="err-tech" style="font-size:12px;opacity:.6;word-break:break-word"></p>
   <button id="b-retry" class="btn">Reintentar</button>
 </section>
 
@@ -102,6 +104,25 @@
   <div id="toast"></div>
 </div>
 <div id="dbg"></div>
+<div id="fatal" style="display:none;position:fixed;left:12px;right:12px;bottom:12px;z-index:50;background:#3a0d1a;border:1px solid #ff5b7a;color:#fff;padding:12px 14px;border-radius:12px;font-size:13px;line-height:1.4;word-break:break-word"></div>
+
+<!-- Diagnóstico: si el código no carga o hay un error, se muestra en pantalla -->
+<script>
+  (function () {
+    var box = document.getElementById('fatal');
+    function show(msg) { box.style.display = 'block'; box.textContent = 'Error técnico: ' + msg; }
+    window.addEventListener('error', function (e) {
+      var t = e.target && e.target.src ? ('no se pudo cargar ' + e.target.src) : (e.message || 'desconocido');
+      show(t + (e.filename ? ' (' + e.filename.split('/').pop() + ':' + e.lineno + ')' : ''));
+    }, true);
+    window.addEventListener('unhandledrejection', function (e) {
+      var r = e.reason; show((r && (r.name || r.message)) ? ((r.name || '') + ' ' + (r.message || '')) : String(r));
+    });
+    setTimeout(function () {
+      if (!window.__ar) show('el código de la experiencia no cargó (módulos). Navegador: ' + navigator.userAgent);
+    }, 6000);
+  })();
+</script>
 
 <!-- Polyfill de import maps: solo actúa en Safari/iOS antiguos (< 16.4) -->
 <script async src="./lib/es-module-shims.js"></script>
@@ -111,6 +132,6 @@
   "three/addons/": "./lib/three/addons/"
 } }
 </script>
-<script type="module" src="./app.js"></script>
+<script type="module" src="./app.js?v=2"></script>
 </body>
 </html>

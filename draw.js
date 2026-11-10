@@ -2,7 +2,7 @@
 //  Dibujo 2D (canvas) de todas las "texturas" de la escena:
 //  panel del dashboard, íconos, botón CTA, cursor y brillos.
 // ============================================================
-import { CONFIG } from './config.js';
+import { CONFIG } from './config.js?v=2';
 
 const C = CONFIG.colors;
 const FONT = 'system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif';
