@@ -61,7 +61,7 @@
 <script>
   const $ = id => document.getElementById(id);
   const inp = $('url');
-  const def = /^https?:/.test(location.href) ? new URL('index.html', location.href).href : '';
+  const def = /^https?:/.test(location.href) ? new URL('./', location.href).href : '';
   inp.value = localStorage.getItem('ar_url') || def;
   let svgText = '';
   function make() {
