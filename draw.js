@@ -2,7 +2,7 @@
 //  Dibujo 2D (canvas) de todas las "texturas" de la escena:
 //  panel del dashboard, íconos, botón CTA, cursor y brillos.
 // ============================================================
-import { CONFIG } from './config.js?v=2';
+import { CONFIG } from './config.js?v=3';
 
 const C = CONFIG.colors;
 const FONT = 'system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif';
@@ -159,7 +159,7 @@ export function drawPanel(cv, st) {
   const k = ease(st.k);
   c.clearRect(0, 0, W, H);
   // cuerpo
-  rr(c, 4, 4, W - 8, H - 8, 34); c.fillStyle = 'rgba(9,14,42,.92)'; c.fill();
+  rr(c, 4, 4, W - 8, H - 8, 34); c.fillStyle = 'rgba(9,14,42,.96)'; c.fill();
   c.save(); rr(c, 4, 4, W - 8, H - 8, 34); c.clip();
   c.fillStyle = lin(c, 0, 0, W, H, 'rgba(46,230,200,.10)', 'rgba(139,108,255,.14)'); c.fillRect(0, 0, W, H);
   // barra lateral
@@ -189,12 +189,12 @@ export function drawPanel(cv, st) {
   rr(c, 252, 22, 380, 46, 23); c.fillStyle = 'rgba(255,255,255,.1)'; c.fill();
   c.beginPath(); c.arc(282, 45, 9, 0, 7); c.lineWidth = 3; c.strokeStyle = C.muted; c.stroke();
   c.beginPath(); c.moveTo(289, 52); c.lineTo(297, 60); c.stroke();
-  c.font = `600 22px ${FONT}`; c.fillStyle = C.muted; c.textBaseline = 'middle'; c.fillText('Buscar…', 312, 46);
+  c.font = `600 24px ${FONT}`; c.fillStyle = C.muted; c.textBaseline = 'middle'; c.fillText('Buscar…', 312, 46);
   c.beginPath(); c.arc(868, 45, 23, 0, 7); c.fillStyle = 'rgba(255,255,255,.1)'; c.fill();
   c.beginPath(); c.arc(868, 43, 8, Math.PI, 0); c.lineTo(878, 55); c.lineTo(858, 55); c.closePath(); c.fillStyle = '#fff'; c.fill();
   c.beginPath(); c.arc(878, 31, 6, 0, 7); c.fillStyle = '#ff5b7a'; c.fill();
   c.beginPath(); c.arc(944, 45, 25, 0, 7); c.fillStyle = lin(c, 920, 20, 970, 70, C.teal, C.violet); c.fill();
-  c.font = `800 26px ${FONT}`; c.textAlign = 'center'; c.fillStyle = '#071033'; c.fillText('A', 944, 47); c.textAlign = 'left';
+  c.font = `800 28px ${FONT}`; c.textAlign = 'center'; c.fillStyle = '#071033'; c.fillText('A', 944, 47); c.textAlign = 'left';
 
   const t = st.tab;
   if (t === 0) tabCursos(c, k, st); else if (t === 1) tabEstudiantes(c, k); else if (t === 2) tabProgreso(c, k); else tabLogros(c, k, st);
@@ -203,7 +203,7 @@ export function drawPanel(cv, st) {
 function heading(c, title, sub) {
   c.textAlign = 'left'; c.textBaseline = 'alphabetic';
   c.font = `800 50px ${FONT}`; c.fillStyle = '#fff'; c.fillText(title, 252, 138);
-  if (sub) { c.font = `600 26px ${FONT}`; c.fillStyle = C.muted; c.fillText(sub, 252, 176); }
+  if (sub) { c.font = `600 28px ${FONT}`; c.fillStyle = C.muted; c.fillText(sub, 252, 176); }
 }
 
 function tabCursos(c, k, st) {
@@ -220,12 +220,12 @@ function tabCursos(c, k, st) {
     c.font = `800 38px ${FONT}`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillStyle = '#071033'; c.fillText(co.sym, x + 62, y + 60);
     c.textAlign = 'left'; c.textBaseline = 'alphabetic';
     c.font = `800 30px ${FONT}`; c.fillStyle = '#fff'; c.fillText(co.name, x + 20, y + 152);
-    c.font = `600 23px ${FONT}`; c.fillStyle = C.muted; c.fillText(co.grade, x + 20, y + 184);
+    c.font = `600 25px ${FONT}`; c.fillStyle = C.muted; c.fillText(co.grade, x + 20, y + 184);
     rr(c, x + 20, y + 218, w - 40, 20, 10); c.fillStyle = 'rgba(255,255,255,.14)'; c.fill();
     const pw = (w - 40) * (co.pct / 100) * ease(k);
     if (pw > 6) { rr(c, x + 20, y + 218, pw, 20, 10); c.fillStyle = lin(c, x + 20, 0, x + w, 0, co.c1, co.c2); c.fill(); }
     c.font = `800 38px ${FONT}`; c.fillStyle = '#fff'; c.fillText(Math.round(co.pct * ease(k)) + '%', x + 20, y + 290);
-    c.font = `600 21px ${FONT}`; c.fillStyle = C.muted; c.fillText('completado', x + 104, y + 290);
+    c.font = `600 23px ${FONT}`; c.fillStyle = C.muted; c.fillText('completado', x + 110, y + 290);
     if (pressed) { rr(c, x, y, w, h, 28); c.fillStyle = `rgba(255,255,255,${.35 * pressed})`; c.fill(); }
     c.globalAlpha = 1;
   });
@@ -236,7 +236,7 @@ function tabEstudiantes(c, k) {
   c.textAlign = 'right'; c.font = `800 58px ${FONT}`; c.fillStyle = C.teal;
   const n = Math.round(CONFIG.studentsActive * ease(k * 1.2));
   c.fillText(n.toLocaleString('es-CO'), 990, 138);
-  c.font = `600 25px ${FONT}`; c.fillStyle = C.muted; c.fillText('activos hoy', 990, 174); c.textAlign = 'left';
+  c.font = `600 27px ${FONT}`; c.fillStyle = C.muted; c.fillText('activos hoy', 990, 174); c.textAlign = 'left';
   const cols = [C.teal, C.violet, '#4ade80', '#fbbf24'];
   CONFIG.students.forEach((s, i) => {
     const a = clamp01(k * 1.6 - i * .22), y = 206 + i * 96 + (1 - ease(a)) * 30;
@@ -246,11 +246,11 @@ function tabEstudiantes(c, k) {
     c.font = `800 30px ${FONT}`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillStyle = '#071033'; c.fillText(s.n[0], 298, y + 42);
     c.textAlign = 'left'; c.textBaseline = 'alphabetic';
     c.font = `800 29px ${FONT}`; c.fillStyle = '#fff'; c.fillText(s.n, 346, y + 36);
-    c.font = `600 22px ${FONT}`; c.fillStyle = C.muted; c.fillText(s.c, 346, y + 64);
+    c.font = `600 24px ${FONT}`; c.fillStyle = C.muted; c.fillText(s.c, 346, y + 64);
     const on = s.s === 'En línea', col = on ? '#4ade80' : C.violet;
     rr(c, 800, y + 18, 170, 44, 22); c.fillStyle = col + '33'; c.fill(); c.lineWidth = 2; c.strokeStyle = col; c.stroke();
     c.beginPath(); c.arc(824, y + 40, 7, 0, 7); c.fillStyle = col; c.fill();
-    c.font = `700 22px ${FONT}`; c.fillStyle = '#fff'; c.textBaseline = 'middle'; c.fillText(s.s, 840, y + 41);
+    c.font = `700 24px ${FONT}`; c.fillStyle = '#fff'; c.textBaseline = 'middle'; c.fillText(s.s, 840, y + 41);
     c.globalAlpha = 1;
   });
 }
@@ -262,13 +262,13 @@ function tabProgreso(c, k) {
   c.strokeStyle = lin(c, cx - R, cy - R, cx + R, cy + R, C.teal, C.violet);
   c.beginPath(); c.arc(cx, cy, R, -Math.PI / 2, -Math.PI / 2 + p * Math.PI * 2); c.stroke(); c.lineCap = 'butt';
   c.textAlign = 'center'; c.textBaseline = 'middle'; c.font = `800 68px ${FONT}`; c.fillStyle = '#fff'; c.fillText(Math.round(p * 100) + '%', cx, cy - 6);
-  c.font = `600 24px ${FONT}`; c.fillStyle = C.muted; c.fillText('avance', cx, cy + 46);
+  c.font = `600 26px ${FONT}`; c.fillStyle = C.muted; c.fillText('avance', cx, cy + 46);
   const bars = CONFIG.weekBars, lab = ['L', 'M', 'M', 'J', 'V', 'S'], bx = 648, base = 520, mh = 250, bw = 44, gap = 14;
   bars.forEach((v, i) => {
     const a = ease(k * 1.5 - i * .1), h = mh * v / 100 * a, x = bx + i * (bw + gap);
     rr(c, x, base - mh, bw, mh, 14); c.fillStyle = 'rgba(255,255,255,.07)'; c.fill();
     if (h > 4) { rr(c, x, base - h, bw, h, 14); c.fillStyle = lin(c, 0, base - h, 0, base, i === bars.length - 1 ? '#fbbf24' : C.teal, C.violet); c.fill(); }
-    c.font = `700 23px ${FONT}`; c.fillStyle = C.muted; c.fillText(lab[i], x + bw / 2, base + 28);
+    c.font = `700 25px ${FONT}`; c.fillStyle = C.muted; c.fillText(lab[i], x + bw / 2, base + 28);
   });
   c.textAlign = 'left';
 }
@@ -285,9 +285,9 @@ function tabLogros(c, k, st) {
   star(c, 0, 0, 46, 20); c.fillStyle = '#fff'; c.fill(); c.restore();
   c.globalAlpha = clamp01(k * 1.6 - .3);
   c.textAlign = 'left'; c.textBaseline = 'alphabetic';
-  c.font = `700 25px ${FONT}`; c.fillStyle = C.teal; c.fillText('CERTIFICADO DE LOGRO', 520, 262);
+  c.font = `700 27px ${FONT}`; c.fillStyle = C.teal; c.fillText('CERTIFICADO DE LOGRO', 520, 262);
   c.font = `800 48px ${FONT}`; c.fillStyle = '#fff'; c.fillText(CONFIG.certificate.name, 520, 330);
-  c.font = `600 26px ${FONT}`; c.fillStyle = C.muted; c.fillText(CONFIG.certificate.course + ' · 100% completado', 520, 376);
+  c.font = `600 28px ${FONT}`; c.fillStyle = C.muted; c.fillText(CONFIG.certificate.course + ' · 100% completado', 520, 376);
   const b = DOWNLOAD_BTN, pressed = st.press && st.press.id === 'download' ? 1 - clamp01(st.press.t / .35) : 0;
   rr(c, b.x, b.y, b.w, b.h, 35); c.fillStyle = lin(c, b.x, 0, b.x + b.w, 0, C.teal, C.violet); c.fill();
   if (pressed) { rr(c, b.x, b.y, b.w, b.h, 35); c.fillStyle = `rgba(255,255,255,${.5 * pressed})`; c.fill(); }

@@ -5,8 +5,8 @@
 // ============================================================
 import * as THREE from 'three';
 import { MindARThree } from './lib/mindar/mindar-image-three.prod.js';
-import { CONFIG } from './config.js?v=2';
-import * as D from './draw.js?v=2';
+import { CONFIG } from './config.js?v=3';
+import * as D from './draw.js?v=3';
 
 const $ = id => document.getElementById(id);
 const qs = new URLSearchParams(location.search);
@@ -18,9 +18,9 @@ const smooth = t => { t = clamp01(t); return t * t * (3 - 2 * t); };
 const col = hex => new THREE.Color(hex);
 
 // ---------- medidas de la escena (1 unidad = ancho de la tarjeta) ----------
-const PW = 1.0, PH = PW * D.PANEL_H / D.PANEL_W;          // panel
-const PANEL_POS = new THREE.Vector3(0, 0.08, 0.4);        // flota sobre la tarjeta
-let ORX = 0.72, ORY = 0.44;                                 // radios de la órbita de íconos
+const PW = 1.18, PH = PW * D.PANEL_H / D.PANEL_W;         // panel (más grande = texto más legible)
+const PANEL_POS = new THREE.Vector3(0, 0.1, 0.32);         // flota sobre la tarjeta (más bajo = menos "palanca" del temblor)
+let ORX = 0.8, ORY = 0.47;                                  // radios de la órbita de íconos
 
 // ---------- estado ----------
 let mind, renderer, scene, camera, anchor, container;
@@ -205,7 +205,7 @@ function showCTA() { if (ctaShown) return; ctaShown = true; ctaT = 0; ctaMesh.vi
 function cancelDemo() { if (!demoOn) return; demoOn = false; cursor.material.opacity = 0; showCTA(); setTimeout(() => toast('¡Ahora pruébalo tú! Toca el menú y los íconos'), 400); }
 
 function onTap(ev) {
-  if (!running || !introStarted || (!floating && !anchor.group.visible)) return;
+  if (!running || !introStarted || !root.visible) return;
   const r = container.getBoundingClientRect();
   const ndc = new THREE.Vector2(((ev.clientX - r.left) / r.width) * 2 - 1, -((ev.clientY - r.top) / r.height) * 2 + 1);
   raycaster.setFromCamera(ndc, camera);
@@ -305,7 +305,7 @@ function updateScene(dt) {
   const e = easeBack((T - 0.9) / 1.2), eo = easeOut((T - 0.9) / 0.9);
   panelG.scale.setScalar(Math.max(0.001, 0.25 + 0.75 * e));
   panelMesh.material.opacity = eo; glowFrame.material.opacity = eo * (0.55 + 0.25 * Math.sin(T * 2.4));
-  panelG.position.set(PANEL_POS.x, PANEL_POS.y + Math.sin(T * 1.4) * 0.012 - (1 - eo) * 0.25, PANEL_POS.z);
+  panelG.position.set(PANEL_POS.x, PANEL_POS.y + Math.sin(T * 1.2) * 0.005 - (1 - eo) * 0.25, PANEL_POS.z);
   updateBillboard(dt);
 
   // órbita de íconos
@@ -313,7 +313,7 @@ function updateScene(dt) {
   ring.scale.set(ORX * oR, ORY * oR, 1); ring.material.opacity = 0.5 * oA; ring.rotation.z = Math.sin(T * 0.3) * 0.05;
   const ca = T * 1.3; comet.position.set(Math.cos(ca) * ORX * oR, Math.sin(ca) * ORY * oR, Math.sin(ca) * 0.22); comet.material.opacity = oA;
   icons.forEach((sp, i) => {
-    const th = T * 0.45 + i * Math.PI / 2, b = sp.userData.bump; sp.userData.bump = Math.max(0, b - dt * 2.2);
+    const th = T * 0.3 + i * Math.PI / 2, b = sp.userData.bump; sp.userData.bump = Math.max(0, b - dt * 2.2);
     sp.position.set(Math.cos(th) * ORX * oR, Math.sin(th) * ORY * oR, Math.sin(th) * 0.28 + 0.04);
     const sc = 0.25 * (1 + b * 0.35 * Math.sin(b * Math.PI)) * (0.9 + 0.1 * Math.sin(th));
     sp.scale.set(sc, sc * 300 / 256, 1); sp.material.opacity = oA;
@@ -343,15 +343,50 @@ function updateBillboard(dt) {
   panelG.getWorldPosition(v1); camera.getWorldPosition(v2);
   tmp.position.copy(v1); tmp.up.set(0, 1, 0); tmp.lookAt(v2);
   root.getWorldQuaternion(q1).invert(); qBill.copy(q1).multiply(tmp.quaternion);
-  const target = qBase.clone().slerp(qBill, 0.9);
+  const target = qBase.clone().slerp(qBill, 0.95);
   panelG.quaternion.slerp(target, 1 - Math.exp(-dt * 12));
+}
+
+// ============================================================
+//  Estabilizador de pose: suaviza la posición/rotación/escala de la tarjeta.
+//  Con el celular casi quieto el filtro es muy fuerte (la escena "se clava");
+//  cuando te mueves de verdad se vuelve ágil para no ir con retraso.
+// ============================================================
+const stab = { has: false, last: 0, p: new THREE.Vector3(), q: new THREE.Quaternion(), s: new THREE.Vector3() };
+const pA = new THREE.Vector3(), qA = new THREE.Quaternion(), sA = new THREE.Vector3();
+const jit = { raw: [], out: [] };
+const STAB = { pLo: 0.004, pHi: 0.06, pMin: 0.05, pMax: 0.75, rLo: 0.008, rHi: 0.13, rMin: 0.035, rMax: 0.7 };
+function adaptive(d, lo, hi, aMin, aMax, f) {
+  const a = aMin + (aMax - aMin) * smooth((d - lo) / (hi - lo));
+  return 1 - Math.pow(1 - a, f);
+}
+function stabilize(dt, now) {
+  anchor.group.matrix.decompose(pA, qA, sA);
+  const w = Math.max(sA.x, 1e-6);
+  if (!stab.has || now - stab.last > 0.8) { stab.p.copy(pA); stab.q.copy(qA); stab.s.copy(sA); stab.has = true; }
+  else {
+    const f = Math.min(4, dt * 60);
+    const SP = window.__stabParams || STAB;
+    const aPos = adaptive(pA.distanceTo(stab.p) / w, SP.pLo, SP.pHi, SP.pMin, SP.pMax, f);   // distancia en "anchos de tarjeta"
+    const aRot = adaptive(qA.angleTo(stab.q), SP.rLo, SP.rHi, SP.rMin, SP.rMax, f);          // ángulo en radianes
+    stab.p.lerp(pA, aPos); stab.q.slerp(qA, aRot); stab.s.lerp(sA, aPos);
+  }
+  root.matrix.compose(stab.p, stab.q, stab.s); root.matrixWorldNeedsUpdate = true;
+  if (DEBUG || window.__jitOn) { // medición de temblor (solo pruebas)
+    jit.raw.push([pA.x / w, pA.y / w, pA.z / w, qA.x, qA.y, qA.z, qA.w]); jit.out.push([stab.p.x / w, stab.p.y / w, stab.p.z / w, stab.q.x, stab.q.y, stab.q.z, stab.q.w]);
+    if (jit.raw.length > 240) { jit.raw.shift(); jit.out.shift(); }
+  }
 }
 
 let fps = 0, fpsAcc = 0, fpsN = 0;
 function loop() {
   const dt = Math.min(clock.getDelta(), 0.05);
-  const visible = floating || (anchor && anchor.group.visible);
-  if (visible && introStarted) updateScene(dt);
+  if (!floating && anchor) {
+    const now = performance.now() / 1000;
+    if (anchor.group.visible) { stabilize(dt, now); stab.last = now; root.visible = true; }
+    else root.visible = stab.has && (now - stab.last) < 0.7; // mantiene la última pose un instante para evitar parpadeos
+  }
+  if (root.visible && introStarted) updateScene(dt);
   renderer.render(scene, camera);
   if (DEBUG) { fpsAcc += dt; fpsN++; if (fpsAcc > .5) { fps = Math.round(fpsN / fpsAcc); fpsN = 0; fpsAcc = 0; $('dbg').textContent = `fps ${fps}\ntarget ${targetVisible} float ${floating}\nT ${T.toFixed(1)} tab ${tab}\n${innerWidth}x${innerHeight} dpr ${devicePixelRatio}`; } }
 }
@@ -361,7 +396,7 @@ function loop() {
 // ============================================================
 function enterFloating() {
   if (floating) return;
-  floating = true; anchor.group.remove(root); camera.add(root); if (!camera.parent) scene.add(camera);
+  floating = true; scene.remove(root); root.matrixAutoUpdate = true; root.visible = true; camera.add(root); if (!camera.parent) scene.add(camera);
   const p0 = camera.projectionMatrix.elements[0], d = Math.max(3, camera.near * 2.5);
   ORX = 0.62; ORY = 0.4;
   const visW = 2 * d / p0, s = (visW * 0.96) / (2 * (ORX + 0.15));
@@ -406,14 +441,16 @@ async function begin() {
     mind = new MindARThree({
       container, imageTargetSrc: CONFIG.targetSrc, maxTrack: 1,
       uiLoading: 'no', uiScanning: 'no', uiError: 'no',
-      filterMinCF: 0.0008, filterBeta: 600, warmupTolerance: 4, missTolerance: 10,
+      filterMinCF: 0.001, filterBeta: 1000, warmupTolerance: 4, missTolerance: 14,
     });
     ({ renderer, scene, camera } = mind);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     floating = false; introStarted = false; targetVisible = false; bursts.length = 0; icons.length = 0;
     buildScene();
-    anchor = mind.addAnchor(0); anchor.group.add(root);
+    anchor = mind.addAnchor(0);
+    stab.has = false; jit.raw.length = 0; jit.out.length = 0;
+    root.matrixAutoUpdate = false; root.visible = false; scene.add(root); // la pose la controla el estabilizador, no el ancla directamente
     anchor.onTargetFound = () => {
       targetVisible = true; $('scan').classList.remove('on');
       if (!introStarted) startIntro();
@@ -441,3 +478,4 @@ window.__ar.step = s => { while (s > 0) { updateScene(0.033); s -= 0.033; } };
 window.__ar.project = (x, y, z = 0.05) => { const p = px2local(x, y, z); panelG.localToWorld(p); p.project(camera); const r = container.getBoundingClientRect(); return [(p.x + 1) / 2 * r.width + r.left, (1 - p.y) / 2 * r.height + r.top]; };
 window.__ar.iconPos = i => { const p = icons[i].position.clone(); orbit.localToWorld(p); p.project(camera); const r = container.getBoundingClientRect(); return [(p.x + 1) / 2 * r.width + r.left, (1 - p.y) / 2 * r.height + r.top]; };
 window.__ar.ctaPos = () => { const p = new THREE.Vector3(0, 0, 0); ctaMesh.localToWorld(p); p.project(camera); const r = container.getBoundingClientRect(); return [(p.x + 1) / 2 * r.width + r.left, (1 - p.y) / 2 * r.height + r.top]; };
+window.__ar.jit = () => jit; window.__jitOn = qs.has('jit');
