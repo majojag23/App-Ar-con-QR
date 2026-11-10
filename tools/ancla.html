@@ -1,0 +1,37 @@
+<!doctype html><meta charset="utf-8">
+<style>html,body{margin:0;background:#000}canvas{display:block}</style>
+<canvas id="c" width="1500" height="1000"></canvas>
+<script>
+// PRNG determinista
+let s=20261110;function rnd(){s=(s*1664525+1013904223)%4294967296;return s/4294967296}
+const W=1500,H=1000,c=document.getElementById('c'),x=c.getContext('2d');
+// fondo
+let g=x.createLinearGradient(0,0,W,H);g.addColorStop(0,'#0b1330');g.addColorStop(.55,'#101a45');g.addColorStop(1,'#1d1250');
+x.fillStyle=g;x.fillRect(0,0,W,H);
+// red de nodos (rica en rasgos para el tracking)
+const N=170,pts=[];for(let i=0;i<N;i++)pts.push({x:rnd()*W,y:rnd()*H,r:2+rnd()*7,k:rnd()});
+x.lineWidth=2;
+for(let i=0;i<N;i++)for(let j=i+1;j<N;j++){const dx=pts[i].x-pts[j].x,dy=pts[i].y-pts[j].y,d=Math.hypot(dx,dy);
+ if(d<150){const gg=x.createLinearGradient(pts[i].x,pts[i].y,pts[j].x,pts[j].y);gg.addColorStop(0,'#2ee6c8');gg.addColorStop(1,'#8b6cff');x.globalAlpha=.85*(1-d/150)+.15;x.strokeStyle=gg;x.beginPath();x.moveTo(pts[i].x,pts[i].y);x.lineTo(pts[j].x,pts[j].y);x.stroke()}}
+x.globalAlpha=1;
+for(const p of pts){x.fillStyle=p.k<.5?'#2ee6c8':(p.k<.8?'#8b6cff':'#ffffff');x.beginPath();x.arc(p.x,p.y,p.r,0,7);x.fill()}
+// triángulos y hexágonos sueltos
+for(let i=0;i<46;i++){const px=rnd()*W,py=rnd()*H,r=14+rnd()*34,n=rnd()<.5?3:6,rot=rnd()*6.28;x.strokeStyle=rnd()<.5?'#2ee6c8':'#b9a5ff';x.lineWidth=3;x.beginPath();for(let k=0;k<=n;k++){const a=rot+k*6.283/n;x[k?'lineTo':'moveTo'](px+Math.cos(a)*r,py+Math.sin(a)*r)}x.stroke()}
+// panel central para el logo
+x.save();x.fillStyle='rgba(8,12,34,.9)';const bx=250,by=310,bw=1000,bh=410,br=40;
+x.beginPath();x.roundRect(bx,by,bw,bh,br);x.fill();
+let gb=x.createLinearGradient(bx,by,bx+bw,by+bh);gb.addColorStop(0,'#2ee6c8');gb.addColorStop(1,'#8b6cff');x.strokeStyle=gb;x.lineWidth=7;x.stroke();x.restore();
+// birrete (icono)
+x.save();x.translate(420,500);x.fillStyle=gb;
+x.beginPath();x.moveTo(0,-70);x.lineTo(110,-20);x.lineTo(0,30);x.lineTo(-110,-20);x.closePath();x.fillStyle='#2ee6c8';x.fill();
+x.fillStyle='#8b6cff';x.beginPath();x.moveTo(-62,10);x.lineTo(-62,55);x.quadraticCurveTo(0,100,62,55);x.lineTo(62,10);x.lineTo(0,40);x.closePath();x.fill();
+x.strokeStyle='#ffffff';x.lineWidth=7;x.beginPath();x.moveTo(104,-14);x.lineTo(104,60);x.stroke();x.fillStyle='#fff';x.beginPath();x.arc(104,66,10,0,7);x.fill();x.restore();
+// texto
+x.fillStyle='#ffffff';x.font='800 118px "Segoe UI", Arial, sans-serif';x.textBaseline='alphabetic';x.fillText('Virtual',560,495);
+x.fillStyle='#2ee6c8';x.font='800 118px "Segoe UI", Arial, sans-serif';x.fillText('eLearning',560,615);
+x.fillStyle='#b8c3f5';x.font='600 34px "Segoe UI", Arial, sans-serif';x.fillText('Aprende · Conecta · Crece',562,682);
+// marco
+x.strokeStyle='#2ee6c8';x.lineWidth=10;x.strokeRect(14,14,W-28,H-28);
+x.strokeStyle='#8b6cff';x.lineWidth=4;x.strokeRect(38,38,W-76,H-76);
+window.READY=true;
+</script>

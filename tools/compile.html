@@ -1,0 +1,10 @@
+<!doctype html><meta charset="utf-8"><img id="i" src="/assets/ancla.png">
+<script type="module">
+import '/lib/mindar/mindar-image.prod.js';
+const img=document.getElementById('i');await img.decode();
+const comp=new window.MINDAR.IMAGE.Compiler();
+await comp.compileImageTargets([img],p=>{window.PROG=p});
+const buf=await comp.exportData();
+let bin='';const u=new Uint8Array(buf);for(let i=0;i<u.length;i+=32768)bin+=String.fromCharCode.apply(null,u.subarray(i,i+32768));
+window.MIND_B64=btoa(bin);window.DONE=true;
+</script>

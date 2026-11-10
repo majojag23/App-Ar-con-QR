@@ -1,0 +1,1 @@
+{"name":"ar-virtual-elearning","private":true,"version":"1.0.0","type":"module","dependencies":{"es-module-shims":"^1.10.0","mind-ar":"^1.2.5","puppeteer":"^25.17.0","qrcode-generator":"^1.4.4","three":"^0.160.0"}}

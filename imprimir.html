@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tarjeta AR · Virtual eLearning (para imprimir)</title>
+<style>
+  :root{--teal:#2ee6c8;--violet:#8b6cff;--navy:#0b1330}
+  *{box-sizing:border-box}
+  body{margin:0;background:#e9ecf5;color:#0b1330;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+  .bar{max-width:880px;margin:0 auto;padding:18px 20px;display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+  .bar label{font-weight:700;width:100%}
+  .bar input{flex:1;min-width:260px;padding:12px 14px;border:2px solid #c5cbe6;border-radius:10px;font-size:16px}
+  .bar button{padding:12px 20px;border:0;border-radius:10px;font-weight:700;font-size:15px;cursor:pointer;color:#06122b;background:linear-gradient(90deg,var(--teal),var(--violet))}
+  .bar small{width:100%;color:#4b5580}
+  .sheet{width:210mm;min-height:297mm;margin:0 auto 30px;background:#fff;padding:14mm 14mm 10mm;box-shadow:0 8px 30px rgba(11,19,48,.15)}
+  .sheet h1{margin:0 0 4mm;font-size:22pt;color:var(--navy)}
+  .sheet h1 span{color:#17b9a0}
+  .ancla{display:block;width:100%}
+  .row{display:flex;gap:10mm;align-items:center;margin-top:10mm}
+  #qr{width:52mm;height:52mm;flex:none;padding:3mm;border:1.2mm solid var(--navy);border-radius:5mm}
+  #qr svg{width:100%;height:100%;display:block}
+  .steps{font-size:13pt;line-height:1.5}
+  .steps b{color:#17b9a0}
+  .steps ol{margin:3mm 0 0;padding-left:6mm}
+  .tip{margin-top:8mm;font-size:10pt;color:#4b5580;border-top:1px dashed #c5cbe6;padding-top:4mm}
+  @media print{
+    body{background:#fff}.bar{display:none}.sheet{box-shadow:none;margin:0;width:auto;min-height:0;padding:0}
+    @page{size:A4;margin:12mm}
+  }
+</style>
+</head>
+<body>
+<div class="bar">
+  <label for="url">Dirección donde publicaste la experiencia (la que abre el QR)</label>
+  <input id="url" type="url" placeholder="https://tu-dominio.com/ar/" inputmode="url">
+  <button id="gen">Generar QR</button>
+  <button id="dl">Descargar QR (PNG)</button>
+  <button id="pr">Imprimir</button>
+  <small>Imprime esta hoja en color, en papel mate si es posible (el brillo causa reflejos que dificultan el reconocimiento). La imagen grande es la "ancla": cuanto más nítida y sin dobleces, mejor se sostiene la animación.</small>
+</div>
+
+<div class="sheet">
+  <h1>Virtual <span>eLearning</span> · Experiencia AR</h1>
+  <img class="ancla" src="assets/ancla.png" alt="Imagen ancla Virtual eLearning">
+  <div class="row">
+    <div id="qr"></div>
+    <div class="steps">
+      <b>¿Cómo verlo?</b>
+      <ol>
+        <li>Escanea el <b>QR</b> con la cámara de tu celular.</li>
+        <li>Abre el enlace y toca <b>“Iniciar experiencia AR”</b>.</li>
+        <li>Apunta la cámara a la <b>imagen de arriba</b> y toca el menú, los íconos y el botón.</li>
+      </ol>
+    </div>
+  </div>
+  <div class="tip">Consejo: ilumina bien la hoja, evita reflejos y mantén el celular a unos 30–50 cm.</div>
+</div>
+
+<script src="lib/qrcode.js"></script>
+<script>
+  const $ = id => document.getElementById(id);
+  const inp = $('url');
+  const def = /^https?:/.test(location.href) ? new URL('index.html', location.href).href : '';
+  inp.value = localStorage.getItem('ar_url') || def;
+  let svgText = '';
+  function make() {
+    const u = inp.value.trim();
+    if (!u) { $('qr').innerHTML = ''; return; }
+    try { localStorage.setItem('ar_url', u); } catch (e) {}
+    const qr = qrcode(0, 'Q'); qr.addData(u); qr.make();
+    svgText = qr.createSvgTag({ cellSize: 8, margin: 0, scalable: true });
+    $('qr').innerHTML = svgText;
+  }
+  $('gen').onclick = make; inp.addEventListener('keydown', e => { if (e.key === 'Enter') make(); });
+  $('pr').onclick = () => { make(); window.print(); };
+  $('dl').onclick = () => {
+    make(); if (!svgText) return;
+    const img = new Image(), blob = new Blob([svgText], { type: 'image/svg+xml' }), url = URL.createObjectURL(blob);
+    img.onload = () => {
+      const c = document.createElement('canvas'); c.width = c.height = 1024; const x = c.getContext('2d');
+      x.fillStyle = '#fff'; x.fillRect(0, 0, 1024, 1024); x.imageSmoothingEnabled = false; x.drawImage(img, 64, 64, 896, 896);
+      const a = document.createElement('a'); a.download = 'qr-virtual-elearning-ar.png'; a.href = c.toDataURL('image/png'); a.click(); URL.revokeObjectURL(url);
+    };
+    img.src = url;
+  };
+  make();
+</script>
+</body>
+</html>
